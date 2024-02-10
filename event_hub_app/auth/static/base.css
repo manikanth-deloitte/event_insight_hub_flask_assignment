@@ -1,0 +1,26 @@
+nav {
+    background-color:aquamarine; 
+}
+ul {
+    list-style-type: none; 
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+li {
+    float: left;
+    margin-right: 20px; 
+}
+li:last-child {
+    margin-right: 0; 
+}
+li a {
+    display: block;
+    color: rgb(163, 40, 40); 
+    text-align: center;
+    padding: 14px 16px; 
+    text-decoration: none;
+}
+li a:hover {
+    background-color: #130a0a; 
+}

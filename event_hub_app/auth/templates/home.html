@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+
+{% block content  %}
+
+    <div>
+        <h1>Welcome to the Event Hub App!</h1>
+        <p>This is a platform where you can explore and participate in various events.</p>
+        {% if current_user.is_authenticated %}
+            <p>{{current_user.username }} thank you for Registering or logging</p>
+        {% else %}
+        <p>Get started by logging in or registering for an account!</p>
+        {% endif %}
+    </div>
+{% endblock  %}

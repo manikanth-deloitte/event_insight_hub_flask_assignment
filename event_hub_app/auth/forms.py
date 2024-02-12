@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, PasswordField, SubmitField
+from wtforms import StringField, IntegerField, PasswordField, SubmitField, TextAreaField, DateTimeField
 from wtforms.validators import DataRequired, Email, EqualTo
 from wtforms import ValidationError
 
@@ -21,10 +21,24 @@ class RegistrationForm(FlaskForm):
     confirm_password = PasswordField('Confirm password', validators=[DataRequired()])
     submit = SubmitField('Register!')
 
-    # def check_email(self, field):
-    #     if User.query.filter_by(email=field.data).first():
-    #         raise ValidationError("Your email has been already registered!")
-    #
-    # def check_username(self, field):
-    #     if User.query.filter_by(username=field.data).first():
-    #         raise ValidationError("username has been already registered!")
+
+class EventOrganizerForm(FlaskForm):
+    try:
+        name = StringField('Event Name', validators=[DataRequired()])
+        description = TextAreaField('Description', validators=[DataRequired()])
+        datetime = DateTimeField('Date and Time', format='%Y-%m-%d %H:%M', validators=[DataRequired()],
+                                 description='Format: YYYY-MM-DD HH:MM')
+        location = StringField('Location')
+        submit = SubmitField('Organize Event')
+    except Exception as e:
+        print(f"An error occurred when creating event organizer form {e}")
+
+
+class UpdateEventForm(FlaskForm):
+    try:
+        name = StringField('Name', validators=[DataRequired()])
+        description = TextAreaField('Description', validators=[DataRequired()])
+        datetime = DateTimeField('Date and Time', validators=[DataRequired()])
+        location = StringField('Location')
+    except Exception as e:
+        print(f"An error occurred when creating event organizer form {e}")

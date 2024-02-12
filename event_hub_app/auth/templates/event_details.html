@@ -3,10 +3,27 @@
 {% block content %}
     <h2>{{ event.name }}</h2>
     <p><strong>Description:</strong> {{ event.description }}</p>
-    <p><strong>Date and Time:</strong> {{ event.datetime }}</p>
+    <p><strong>Date and Time:</strong> {{ event.date_time }}</p>
+    <p><strong>Duration:</strong> {{ event.duration }}</p>
     <p><strong>Location:</strong> {{ event.location }}</p>
     <p><strong>Organizer:</strong> {{ event.organizer.username }}</p>
-    <form action="{{ url_for('register_event', event_id=event.id) }}" method="POST">
-        <button type="submit" class="btn btn-primary">Register for this event</button>
-    </form>
+    {% if  organiser%}
+        <p><strong>Organizer cann't register</strong></p>
+        {% if event_closed %}
+            <p>Event time is Completed</p>
+        {% endif %}
+
+    {% elif not event_closed %}
+        {% if not registered %}
+            <form action="{{ url_for('register_event', event_id=event.id) }}" method="POST">
+                <button type="submit" >Register for this event</button>
+            </form>
+        {% else %}
+            <p><strong> STATUS:</strong>Registered</p>
+        {% endif %}    
+    {% else %}
+        <p><strong> Registration are closed</strong></p>
+    {% endif %}
+    
+    
 {% endblock %}

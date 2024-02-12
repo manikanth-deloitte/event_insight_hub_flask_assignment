@@ -1,16 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h2>Registered Events</h2>
-    <ul>
-        {% for event in events %}
-            <li>
-                <h3>{{ event.name }}</h3>
-                <p><strong>Description:</strong> {{ event.description }}</p>
-                <p><strong>Date and Time:</strong> {{ event.datetime }}</p>
-                <p><strong>Location:</strong> {{ event.location }}</p>
-                <p><strong>Organizer:</strong> {{ event.organizer.username }}</p>
-            </li>
-        {% endfor %}
-    </ul>
+    <div>
+        <h2>{{title}}</h2>
+        <ul>
+            {% for event in events %}
+                <li>
+                    <h3>{{ event.name }}</h3>
+                    <p><strong>Description:</strong> {{ event.description }}</p>
+                    <p><strong>Date and Time:</strong> {{ event.date_time }}</p>
+                    <p><strong>Duration:</strong> {{ event.duration }}</p>
+                    <p><strong>Location:</strong> {{ event.location }}</p>
+                    <p><strong>Organizer:</strong> {{ event.organizer.username }}</p>
+                    <form action="{{ url_for('give_feedback', event_name=event.id) }}" method="post" style="display: inline;">
+                        <button  type="submit">Give Feedback</button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
 {% endblock %}

@@ -1,15 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h2>Your Organized Events</h2>
+    <h2>ORGANIZED EVENTS</h2>
     <ul>
         {% for event in events %}
             <h2>{{ event.name }}</h2>
             <p><strong>Description:</strong> {{ event.description }}</p>
-            <p><strong>Date and Time:</strong> {{ event.datetime }}</p>
+            <p><strong>Date and Time:</strong> {{ event.date_time }}</p>
+            <p><strong>Duration:</strong> {{ event.duration }}</p>
             <p><strong>Location:</strong> {{ event.location }}</p>
             <form action="{{ url_for('update_event', event_id=event.id) }}" method="post" style="display: inline;">
-                <button type="submit">Update</button>
+                <button  type="submit">Update</button>
             </form>
             <form action="{{ url_for('delete_event', event_id=event.id) }}" method="post" style="display: inline;">
                 <button type="submit">Delete</button>

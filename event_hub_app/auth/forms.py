@@ -26,8 +26,9 @@ class EventOrganizerForm(FlaskForm):
     try:
         name = StringField('Event Name', validators=[DataRequired()])
         description = TextAreaField('Description', validators=[DataRequired()])
-        datetime = DateTimeField('Date and Time', format='%Y-%m-%d %H:%M', validators=[DataRequired()],
-                                 description='Format: YYYY-MM-DD HH:MM')
+        date_time = DateTimeField('Date and Time', format='%Y-%m-%d %H:%M', validators=[DataRequired()],
+                                  description='Format: YYYY-MM-DD HH:MM')
+        duration = StringField('Duration in Minutes')
         location = StringField('Location')
         submit = SubmitField('Organize Event')
     except Exception as e:
@@ -38,7 +39,17 @@ class UpdateEventForm(FlaskForm):
     try:
         name = StringField('Name', validators=[DataRequired()])
         description = TextAreaField('Description', validators=[DataRequired()])
-        datetime = DateTimeField('Date and Time', validators=[DataRequired()])
+        date_time = DateTimeField('Date and Time', validators=[DataRequired()])
+        duration = StringField('Name', validators=[DataRequired()])
         location = StringField('Location')
     except Exception as e:
         print(f"An error occurred when creating event organizer form {e}")
+
+
+class EventFeedbackForm(FlaskForm):
+    try:
+        rating = IntegerField('rating', validators=[DataRequired()])
+        comment = TextAreaField('comments')
+        submit = SubmitField('Submit Feedback')
+    except Exception as e:
+        print(f"An error occurred when creating event feedback form {e}")

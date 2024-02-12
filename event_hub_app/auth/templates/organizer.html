@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Organize Event</h2>
+  <form action="{{ url_for('organize_event') }}" method="POST">
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+      {{ form.name.label }}
+      {{ form.name(class="form-control") }}
+      {% if error %}
+                   <p>{{error}}</p>
+      {% endif %}
+    </div>
+    <div class="form-group">
+      {{ form.description.label }}
+      {{ form.description(class="form-control") }}
+    </div>
+    <div class="form-group">
+      {{ form.datetime.label }}
+      {{ form.datetime(class="form-control") }}
+    </div>
+    <div class="form-group">
+      {{ form.location.label }}
+      {{ form.location(class="form-control") }}
+    </div>
+    <div class="form-group">
+        {{ form.submit()}}
+      </div>
+  </form>
+{% endblock %} 

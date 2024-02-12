@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Update Event</h2>
+    <form method="POST" action="{{ url_for('update_event', event_id=event.id) }}">
+        {{ form.hidden_tag() }}
+        <div>
+            {{ form.name.label }} {{ form.name() }}
+        </div>
+        <div>
+            {{ form.description.label }} {{ form.description() }}
+        </div>
+        <div>
+            {{ form.datetime.label }} {{ form.datetime() }}
+        </div>
+        <div>
+            {{ form.location.label }} {{ form.location() }}
+        </div>
+        <button type="submit">Update</button>
+    </form>
+{% endblock %}

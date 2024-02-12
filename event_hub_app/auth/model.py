@@ -1,7 +1,9 @@
+from datetime import datetime
 from flask_login import UserMixin
 from . import db, login_manager
 from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
+
 
 
 @login_manager.user_loader
@@ -12,6 +14,7 @@ def load_user(user_id):
         print(f"An error occurred while loading the user: {e}")
         return None
 
+
 class User(db.Model, UserMixin):
     __tablename__ = "users"
 
@@ -21,7 +24,7 @@ class User(db.Model, UserMixin):
     phone_number = db.Column(db.String(10), nullable=False)
     hashed_password = db.Column(db.String(128), nullable=False)
 
-    # organized_events = db.relationship('Event', backref='organizer', lazy=True)
+    organized_events = db.relationship('Event', backref='organizer', lazy=True)
 
     def __init__(self, username, password, email, phone_number):
         self.username = username
@@ -31,3 +34,42 @@ class User(db.Model, UserMixin):
 
     def check_password(self, password):
         return check_password_hash(self.hashed_password, password)
+
+
+class Event(db.Model):
+    __tablename__ = 'events'
+
+    id = db.Column(db.String(36), primary_key=True, default=str(uuid.uuid4()))
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    datetime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    location = db.Column(db.String(100))
+    organizer_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    feedback = db.relationship('Feedback', backref='event', lazy=True)
+    participants = db.relationship('User', secondary='event_participant', backref='attended_events')
+
+    def __init__(self, name, description, datetime, location, organizer_id):
+        self.name = name
+        self.description = description
+        self.datetime = datetime
+        self.location = location
+        self.organizer_id = organizer_id
+
+    def check_event_name(self, event_name):
+        return self.name != event_name
+
+
+class Feedback(db.Model):
+    __tablename__ = 'feedbacks'
+
+    id = db.Column(db.Integer, primary_key=True)
+    event_id = db.Column(db.String(36), db.ForeignKey('events.id'), nullable=False)
+    comment = db.Column(db.Text)
+    rating = db.Column(db.Integer)
+
+
+event_participant = db.Table(
+    'event_participant',
+    db.Column('event_id', db.String(36), db.ForeignKey('events.id'), primary_key=True),
+    db.Column('participant_id', db.String(36), db.ForeignKey('users.id'), primary_key=True)
+)

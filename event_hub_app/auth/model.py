@@ -66,14 +66,18 @@ class Event(db.Model):
 class Feedback(db.Model):
     __tablename__ = 'feedbacks'
 
-    id = db.Column(db.Integer, primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = db.Column(db.Integer, primary_key=True)
     event_id = db.Column(db.String(36), db.ForeignKey('events.id'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     comment = db.Column(db.Text)
     rating = db.Column(db.Integer)
 
-    def __init__(self, rating, comment):
+    def __init__(self, event_id, user_id, rating, comment):
+        self.event_id = event_id
+        self.user_id = user_id
         self.rating = rating
         self.comment = comment
+
 
 event_participant = db.Table(
     'event_participant',

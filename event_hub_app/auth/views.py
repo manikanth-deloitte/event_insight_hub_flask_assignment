@@ -7,7 +7,9 @@ from sqlalchemy import inspect
 from . import db, app
 from .model import User, Event, Feedback
 from .forms import LoginForm, RegistrationForm, EventOrganizerForm, UpdateEventForm, EventFeedbackForm
+from .analytics_dashboard import generate_graph
 from werkzeug.security import generate_password_hash, check_password_hash
+
 
 
 @app.route('/')
@@ -145,16 +147,6 @@ def event_details(event_id):
     if current_date >= event.date_time:
         event_closed = True
 
-    if organiser:
-        print("not an organiser:", organiser)
-    elif not event_closed:
-        if registered:
-            print("event not registered:", registered)
-        else:
-            print("event registered:", registered)
-    else:
-        print("registration are closed:", event_closed)
-
     if not event:
         abort(404)  # Return a 404 error if the event is not found
     return render_template('event_details.html', event=event, event_closed=event_closed,
@@ -267,31 +259,50 @@ def delete_event(event_id):
     return redirect(url_for('user_organized_events'))
 
 
-@app.route('/events/events_participated/feedback/<event_name>', methods=['GET', 'POST'])
-def give_feedback(event_name):
+@app.route('/events/<event_id>/feedback', methods=['GET', 'POST'])
+def show_feedback_form(event_id):
+    event = Event.query.get(event_id)
     form = EventFeedbackForm()
-    return render_template('feedback_form.html', form=form, name=event_name)
+    return render_template('feedback_form.html', event=event, form=form)
 
 
-@app.route('/events/events_participated/feedback/', methods=['GET', 'POST'])
-def submit_feedback():
+@app.route('/events/feedback/<event_id>', methods=['GET', 'POST'])
+def submit_feedback(event_id):
+    event = Event.query.get_or_404(event_id)
     form = EventFeedbackForm()
-    return redirect(url_for('user_participated_events'))
+    if form.validate_on_submit():
+        # Check if the user has already provided feedback for the event
+        existing_feedback = Feedback.query.filter_by(event_id=event.id, user_id=current_user.id).first()
+        if existing_feedback:
+            flash('You have already submitted feedback for this event.', 'warning')
+            message = "Feedback is already Submitted"
+            return render_template('feedback_form.html', form=form, event=event, error_message=True)
 
-    # if form.validate_on_submit():
-    #     if Feedback.query.filter_by(name=form.name.data).first():
-    #         return render_template('organizer.html', form=form,
-    #                                error="Event with this name already exists!")
-    #     event = Event(
-    #         name=form.name.data,
-    #         description=form.description.data,
-    #         date_time=form.date_time.data,
-    #         event_duration=form.duration.data,
-    #         location=form.location.data,
-    #         organizer_id=current_user.id
-    #     )
-    #     db.session.add(event)
-    #     db.session.commit()
-    #     flash('Event organized successfully!', 'success')
-    #     return redirect(url_for('user_organized_events'))  # Redirect to the home page after organizing the event
-    # return render_template('organizer.html', form=form)
+        # Save the rating and comment to the database
+        feedback = Feedback(
+            event_id=event.id,
+            user_id=current_user.id,
+            rating=form.rating.data,
+            comment=form.comment.data
+        )
+        db.session.add(feedback)
+        db.session.commit()
+        message = "Feedback is  Submitted"
+        print(message)
+        flash('Feedback submitted successfully!', 'success')
+        return redirect(url_for('user_participated_events', message=message))
+
+    return render_template('feedback_form.html', form=form, event=event)
+
+
+@app.route('/event_details/<event_id>/event-feedbacks')
+def get_event_feedbacks(event_id):
+    event = Event.query.get(event_id)
+    event_feedbacks = Feedback.query.filter_by(event_id=event.id).all()
+    return render_template('event_feedbacks.html', event=event, event_feedbacks=event_feedbacks)
+
+
+@app.route('/dashboard')
+def dashboard():
+    generate_graph()
+    return render_template('analytics_dashboard.html')

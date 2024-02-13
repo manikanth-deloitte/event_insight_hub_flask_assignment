@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+
+{% block content %}
+       <p>Below graphs represents the Top 3 Events</p>
+       <img src="{{ url_for('static', filename = 'Top_event_graph.png') }}" alt="Top Events Graph"  width="700" height="500">
+{% endblock content %}

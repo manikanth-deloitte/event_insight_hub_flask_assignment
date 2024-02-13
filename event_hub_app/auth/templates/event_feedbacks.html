@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+       <div>
+            {% if event_feedbacks %}
+                {% for feedback in event_feedbacks %}
+                    <div>
+                        <p>User ID: {{feedback.user_id}}<p>
+                        <p>Rating: {{feedback.rating}}<p>
+                        <p>Comment: {{feedback.comment}}<p>
+                    <div>
+                {% endfor %}
+            {% else %}
+                <p><strong>Feedbacks are not yet provided</strong></p>
+            {% endif %}
+       </div>
+{% endblock content %}

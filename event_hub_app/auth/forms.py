@@ -1,9 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, PasswordField, SubmitField, TextAreaField, DateTimeField
 from wtforms.validators import DataRequired, Email, EqualTo, NumberRange
-from wtforms import ValidationError
-
-from .model import User
 
 
 class LoginForm(FlaskForm):
@@ -48,7 +45,9 @@ class UpdateEventForm(FlaskForm):
 
 class EventFeedbackForm(FlaskForm):
     try:
-        rating = IntegerField('Rating', validators=[DataRequired(), NumberRange(min=1, max=5, message="Rating must be between 1 and 5")])
+        rating = IntegerField('Rating', validators=[DataRequired(),
+                                                    NumberRange(min=1, max=5,
+                                                                message="Rating must be between 1 and 5")])
         comment = TextAreaField('comments')
         submit = SubmitField('Submit Feedback')
     except Exception as e:

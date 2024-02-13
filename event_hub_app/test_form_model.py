@@ -1,4 +1,4 @@
-from .auth.forms import LoginForm, EventFeedbackForm, EventOrganizerForm
+from .auth.forms import LoginForm, EventFeedbackForm
 from .auth.model import User
 from .auth import app
 

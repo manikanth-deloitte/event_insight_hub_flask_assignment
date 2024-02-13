@@ -1,15 +1,15 @@
 from datetime import timedelta, datetime
-
-from flask import render_template, redirect, request, url_for, abort, flash
+from flask import render_template, redirect, request, url_for, flash
 from flask_login import login_user, login_required, logout_user, current_user
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy import inspect
 from . import db, app
 from .model import User, Event, Feedback
 from .forms import LoginForm, RegistrationForm, EventOrganizerForm, UpdateEventForm, EventFeedbackForm
 from .analytics_dashboard import generate_graph
-from werkzeug.security import generate_password_hash, check_password_hash
 
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
 
 
 @app.route('/')
@@ -91,41 +91,61 @@ def register():
 
 
 @app.route('/organize', methods=['GET', 'POST'])
+@login_required
 def organize_event():
+    """
+        This function will get the data from organize form and store to event data base
+    """
     form = EventOrganizerForm()
     if form.validate_on_submit():
-        if Event.query.filter_by(name=form.name.data).first():
-            return render_template('organizer.html', form=form,
-                                   error="Event with this name already exists!")
-        event = Event(
-            name=form.name.data,
-            description=form.description.data,
-            date_time=form.date_time.data,
-            event_duration=form.duration.data,
-            location=form.location.data,
-            organizer_id=current_user.id
-        )
-        db.session.add(event)
-        db.session.commit()
-        flash('Event organized successfully!', 'success')
-        return redirect(url_for('user_organized_events'))  # Redirect to the home page after organizing the event
+        try:
+            if Event.query.filter_by(name=form.name.data).first():
+                return render_template('organizer.html', form=form,
+                                       error="Event with this name already exists!")
+            # save it to event database
+            event = Event(
+                name=form.name.data,
+                description=form.description.data,
+                date_time=form.date_time.data,
+                event_duration=form.duration.data,
+                location=form.location.data,
+                organizer_id=current_user.id
+            )
+            db.session.add(event)
+            db.session.commit()
+            flash('Event organized successfully!', 'success')
+            return redirect(url_for('user_organized_events'))
+        except Exception as e:
+            flash(f"error generated while  organise data saving to Event DB {e}")
     return render_template('organizer.html', form=form)
 
 
 @app.route('/events', methods=['GET'])
+@login_required
 def events():
+    """
+        This function render to list of categorize events
+    """
     return render_template('events.html')
 
 
 @app.route('/all_events', methods=['GET', 'POST'])
+@login_required
 def all_events():
+    """
+    This function will get the all the event details
+    """
     all_events = Event.query.all()
     return render_template('all_events.html', events=all_events, title="EVENTS LIST")
 
 
 @app.route('/event_details/<event_id>')
+@login_required
 def event_details(event_id):
-    # Retrieve the event from the database using the event_id
+    """
+    This function get the event based and show status of registration
+    based on time/already registered/organizer
+    """
     event = Event.query.get(event_id)
 
     # check if participant is organiser
@@ -147,43 +167,42 @@ def event_details(event_id):
     if current_date >= event.date_time:
         event_closed = True
 
-    if not event:
-        abort(404)  # Return a 404 error if the event is not found
     return render_template('event_details.html', event=event, event_closed=event_closed,
                            registered=registered, organiser=organiser)
 
 
 @app.route('/register/<event_id>', methods=['POST'])
 def register_event(event_id):
+    """
+    This function will add the participant to event DB when user registered
+    """
     event = Event.query.get(event_id)
 
     user = User.query.get(current_user.id)
 
     # Check if the user is already registered for the event
     if user in event.participants:
-        flash('You are already registered for this event!', 'info')
-        return redirect(url_for('user_registered_events'))  # Redirect to events page
+        flash('You are already registered for this event!')
+        return redirect(url_for('user_registered_events'))
 
-    # Add the user to the event's participants list
     event.participants.append(user)
-
-    # Commit the changes to the database
     db.session.commit()
 
-    flash('Successfully registered for the event!', 'success')
+    flash('Successfully registered for the event!')
     return redirect(url_for('user_registered_events'))
 
 
 @app.route('/events/events_registered', methods=['GET'])
 @login_required
 def user_registered_events():
+    """
+    This function will get the user specific registered events
+    """
     user = current_user  # Assuming the current user is authenticated
     events_list = Event.query.filter(Event.participants.any(id=user.id)).all()
-    registered_events_list = []
+
     current_date = datetime.now()
-    for event in events_list:
-        if event.date_time > current_date:
-            registered_events_list.append(event)
+    registered_events_list = [event for event in events_list if event.date_time > current_date]
 
     return render_template('events_participated.html', events=registered_events_list, title="REGISTERED EVENTS")
 
@@ -191,14 +210,17 @@ def user_registered_events():
 @app.route('/events/events_participated', methods=['GET'])
 @login_required
 def user_participated_events():
-    user = current_user  # Assuming the current user is authenticated
+    """
+    This function will get the user participated events , the event user
+    registered and participated(event time completed)
+    """
+    user = current_user
     events_list = Event.query.filter(Event.participants.any(id=user.id)).all()
-    participated_events_list = []
+
+    # check event time is completed
     current_date = datetime.now()
-    for event in events_list:
-        end_time = event.date_time + timedelta(minutes=int(event.duration))
-        if end_time < current_date:
-            participated_events_list.append(event)
+    participated_events_list = [event for event in events_list if
+                                event.date_time + timedelta(minutes=int(event.duration)) < current_date]
 
     return render_template('events_participated.html', events=participated_events_list, title="PARTICIPATED EVENTS",
                            feedback_button=True)
@@ -207,10 +229,10 @@ def user_participated_events():
 @app.route('/events/organized_events', methods=['GET'])
 @login_required
 def user_organized_events():
-    # Get the current user's organized events
+    """
+    This function will get the user organized events and display event details
+    """
     organized_events = current_user.organized_events
-
-    # Render the organized_events.html template and pass the events to it
     return render_template('organized_events.html', events=organized_events)
 
 
@@ -218,38 +240,43 @@ def user_organized_events():
 def archived_events():
     events_list = Event.query.all()
 
-    archived_events_list = []
+    # events that are completed
     current_date = datetime.now()
-    for event in events_list:
-        end_time = event.date_time + timedelta(minutes=int(event.duration))
-        if end_time <= current_date:
-            archived_events_list.append(event)
+    archived_events_list = [event for event in events_list if
+                            event.date_time + timedelta(minutes=int(event.duration)) <= current_date]
 
     return render_template('all_events.html', events=archived_events_list, title="ARCHIVED EVENTS ")
 
 
 @app.route('/event/update/<event_id>', methods=['GET', 'POST'])
 def update_event(event_id):
+    """
+        This function will update the event details
+    """
     event = Event.query.get(event_id)
-    form = UpdateEventForm(obj=event)  # Pass the event object to populate the form
+    form = UpdateEventForm(obj=event)
     if form.validate_on_submit():
-        event.name = form.name.data
-        event.description = form.description.data
-        event.date_time = form.date_time.data
-        event.duration = form.duration.data
-        event.location = form.location.data
-        db.session.commit()
-        flash('Event details updated successfully!', 'success')
-        return redirect(url_for('user_organized_events'))
+        try:
+            event.name = form.name.data
+            event.description = form.description.data
+            event.date_time = form.date_time.data
+            event.duration = form.duration.data
+            event.location = form.location.data
+            db.session.commit()
+            flash('Event details updated successfully!')
+            return redirect(url_for('user_organized_events'))
+        except Exception as e:
+            flash(f"Error occurred when saving updated event details to database {e}")
     return render_template('update_event.html', form=form, event=event)
 
 
 @app.route('/event/delete/<event_id>', methods=['POST'])
 def delete_event(event_id):
-    # Retrieve the event from the database
+    """
+    This function will delete the even from DB
+    """
     event = Event.query.get(event_id)
     if event:
-        # Delete the event
         db.session.delete(event)
         db.session.commit()
         flash('Event deleted successfully', 'success')
@@ -268,41 +295,54 @@ def show_feedback_form(event_id):
 
 @app.route('/events/feedback/<event_id>', methods=['GET', 'POST'])
 def submit_feedback(event_id):
-    event = Event.query.get_or_404(event_id)
+    """
+    This function submit the feedback for an event  only when feedback is not given
+    """
+    event = Event.query.get(event_id)
     form = EventFeedbackForm()
     if form.validate_on_submit():
+
         # Check if the user has already provided feedback for the event
         existing_feedback = Feedback.query.filter_by(event_id=event.id, user_id=current_user.id).first()
         if existing_feedback:
-            flash('You have already submitted feedback for this event.', 'warning')
-            message = "Feedback is already Submitted"
+            flash('You have already submitted feedback for this event.')
             return render_template('feedback_form.html', form=form, event=event, error_message=True)
 
         # Save the rating and comment to the database
-        feedback = Feedback(
-            event_id=event.id,
-            user_id=current_user.id,
-            rating=form.rating.data,
-            comment=form.comment.data
-        )
-        db.session.add(feedback)
-        db.session.commit()
-        message = "Feedback is  Submitted"
-        print(message)
-        flash('Feedback submitted successfully!', 'success')
-        return redirect(url_for('user_participated_events', message=message))
-
+        try:
+            feedback = Feedback(
+                event_id=event.id,
+                user_id=current_user.id,
+                rating=form.rating.data,
+                comment=form.comment.data
+            )
+            db.session.add(feedback)
+            db.session.commit()
+            message = "Feedback is  Submitted"
+            flash('Feedback submitted successfully!')
+            return redirect(url_for('user_participated_events', message=message))
+        except Exception as e:
+            flash(f"error occurred when submitting the feedback data to DB {e}")
     return render_template('feedback_form.html', form=form, event=event)
 
 
 @app.route('/event_details/<event_id>/event-feedbacks')
 def get_event_feedbacks(event_id):
-    event = Event.query.get(event_id)
-    event_feedbacks = Feedback.query.filter_by(event_id=event.id).all()
-    return render_template('event_feedbacks.html', event=event, event_feedbacks=event_feedbacks)
+    """
+    This function will get the all feedbacks from the participant for an event
+    """
+    try:
+        event = Event.query.get(event_id)
+        event_feedbacks = Feedback.query.filter_by(event_id=event.id).all()
+        return render_template('event_feedbacks.html', event=event, event_feedbacks=event_feedbacks)
+    except Exception as e:
+        flash(f"error occurred when getting the feedback details{e}")
 
 
 @app.route('/dashboard')
 def dashboard():
+    """
+    This function will render the html template to display the graphs
+    """
     generate_graph()
     return render_template('analytics_dashboard.html')

@@ -17,11 +17,7 @@
     </div>
     <div>
         {% if error_message %}
-            {% with messages= get_flashed_messages() %}
-                {% if messages %}
-                    <p><strong>{{messages[0]}}</strong></p>
-                {% endif %}
-            {% endwith %}
+            <p>cannot update: <strong>feedback already submitted </strong></p>
         {% endif %}
     </div>
   </form>

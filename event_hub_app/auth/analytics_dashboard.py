@@ -1,5 +1,7 @@
 from .model import User, Event, Feedback
 import pandas as pd
+import matplotlib.pyplot as plt
+import os
 
 
 def get_event_data():
@@ -33,3 +35,30 @@ def get_event_data():
             'Participation': event_participants
         })
     return event_dataframe
+
+
+def generate_graph():
+    event_dataframe = get_event_data()
+    top_events_by_rating = event_dataframe.sort_values(by='Rating', ascending=False).head(3)
+    top_events_by_participation = event_dataframe.sort_values(by='Participation', ascending=False).head(3)
+
+    # Plotting
+    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(8, 10))
+
+    # Top events by rating
+    axes[0].bar(top_events_by_rating['Events'], top_events_by_rating['Rating'], color='blue')
+    axes[0].set_title('Top 3 Events Based on Rating')
+    axes[0].set_ylabel('Rating')
+
+    # Top events by participation
+    axes[1].bar(top_events_by_participation['Events'], top_events_by_participation['Participation'], color='green')
+    axes[1].set_title('Top 3 Events Based on Participation')
+    axes[1].set_ylabel('Participation')
+
+    # Adjust layout
+    plt.tight_layout()
+
+    current_directory = os.getcwd()
+    path = os.path.join(current_directory, 'auth', 'static')
+    file_name = os.path.join(path, 'Top_event_graph.png')
+    plt.savefig(file_name)
